@@ -28,7 +28,7 @@ stages:
     variables:
       - ${{ each DeployStageVariableMapping in parameters.DeployStageVariableMappings }}:
           - name: ${{ DeployStageVariableMapping.Key }}
-            value: ${{ replace(DeployStageVariableMapping.Value, '[ENV]', parameter.Environment }}
+            value: ${{ replace(DeployStageVariableMapping.Value, '[ENV]', parameter.Environment) }}
 
     jobs:
       - deployment: deployApp
