@@ -1,0 +1,61 @@
+parameters:
+  - name: PipelineVariableMappings
+    type: object
+    default:
+      - name: UbuntuPool
+        value: "Mare Nectaris"
+      - name: WindowsPool
+        value: "Mare Nubium"
+      - name: DotnetVersion
+        value: "8.0.x" 
+  - name: BuildStageVariableMappings
+    type: object
+    default: {}
+  - name: DeployStageVariableMappings
+    type: object
+    default: {}
+  - name: HasUnitTests
+    type: boolean
+    default: false
+
+variables:
+  - name: BuildCounter
+    value: $[counter(format('{0:yyyyMMdd}', pipeline.startTime), 1)]
+  - name: CheckOutPath
+    value: devops-web-service-pipeline-template
+  - ${{ each PipelineVariableMapping in parameters.PipelineVariableMappings }}:
+    - name: ${{ PipelineVariableMapping.Key }}
+      value: ${{ PipelineVariableMapping.Value }}
+
+stages:
+  - template: build-stage.yml
+    parameters:
+      BuildStageVariableMappings: ${{ parameters.BuildStageVariableMappings }}
+      HasUnitTests: ${{ parameters.HasUnitTests }}
+      
+  - template: checks-stage.yml
+
+  - template: deploy-stage.yml
+    parameters:
+      Environment: dev
+      DeployStageVariableMappings: ${{ parameters.DeployStageVariableMappings }}
+      dependsOn:
+        - "Build"
+  
+  - template: deploy-stage.yml
+    parameters:
+      Environment: qa
+      DeployStageVariableMappings: ${{ parameters.DeployStageVariableMappings }}
+      dependsOn:
+        - "Checks"
+        - "Deploy_dev"
+      condition: succeeded('Checks', 'Deploy_dev')
+
+  - template: deploy-stage.yml
+    parameters:
+      Environment: live
+      DeployStageVariableMappings: ${{ parameters.DeployStageVariableMappings }}
+      dependsOn:
+        - "Deploy_qa"
+      condition: succeeded()
+      

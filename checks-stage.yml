@@ -1,0 +1,25 @@
+﻿stages:
+  - stage: Checks
+    dependsOn: "Build"
+    displayName: "Checks"
+    jobs:
+      - job: NVD
+        workspace:
+          clean: all
+        pool: $(WindowsPool)
+        steps:
+          - checkout: self
+
+          - download: current
+            artifact: "BuiltWebService"
+
+          - script: |
+              dependency-check --project "BuiltWebService - $(Build.SourceBranchName)" --scan "$(Build.SourcesDirectory)" --out "$(Build.SourcesDirectory)/DCReport" --noupdate --disableNodeAudit --disableNodeJS
+
+          - task: PublishPipelineArtifact@1
+            inputs:
+              targetPath: "$(Build.SourcesDirectory)/DCReport"
+              artifact: "DependencyCheckReport"
+              publishLocation: "pipeline"
+
+          - powershell: Invoke-VulnerabilityCheck -ReportLocation "$(Build.SourcesDirectory)/DCReport/*"

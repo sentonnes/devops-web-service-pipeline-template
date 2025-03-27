@@ -1,0 +1,138 @@
+﻿parameters:
+  - name: HasUnitTests
+    type: boolean
+    default: false
+  - name: BuildStageVariableMappings
+    type: object
+    default: {}
+
+stages:
+  - stage: Build
+    displayName: "Build"
+    variables:
+      - name: Company
+        value: "UK Hydrographic Office"
+      - name: VersionPrefix
+        value: "1.0."
+      - name: Copyright
+        value: "Copyright © UK Hydrographic Office"
+      - ${{ each JobsVariableMapping in parameters.JobsVariableMappings }}:
+          - name: ${{ JobsVariableMapping.Key }}
+            value: ${{ JobsVariableMapping.Value }}
+
+    jobs:
+      - ${{ if parameters.HasUnitTests }}:
+        - job: UnitTestsAndCodeCoverage
+          workspace:
+            clean: all
+          displayName: "Dotnet Test and Publish Code Coverage"
+          steps:
+            - task: UseDotNet@2
+              displayName: 'Use .NET $(DotnetVersion) sdk'
+              inputs:
+                packageType: sdk
+                useGlobalJson: true
+                workingDirectory: '$(Build.SourcesDirectory)\$(ProjectFolderPath)'
+  
+            - task: DotNetCoreCLI@2
+              displayName: ".Net Core - NuGet restore test projects only"
+              inputs:
+                command: "restore"
+                projects: "**/*UnitTests.csproj"
+                feedsToUse: config
+                noCache: true
+                nugetConfigPath: '$(Build.SourcesDirectory)\BuildNuget.config'
+                workingDirectory: '$(Build.SourcesDirectory)\$(ProjectFolderPath)'
+                packagesDirectory: '$(Build.SourcesDirectory)\$(ProjectFolderPath)\packagesForTests'
+  
+            - task: DotNetCoreCLI@2
+              displayName: "dotnet test - Perform Unit Tests"
+              inputs:
+                command: "test"
+                projects: "**/*UnitTests.csproj"
+                arguments: '--configuration release --settings "$(Build.SourcesDirectory)\test.runsettings" /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura'
+                publishTestResults: true
+                testRunTitle: "UnitTests"
+  
+            - task: PowerShell@2
+              displayName: "Generate code coverage report"
+              inputs:
+                targetType: filePath
+                filePath: '$(Build.SourcesDirectory)\CodeCoverageReport.ps1'
+                arguments: '-source "$(Build.SourcesDirectory)" -reportFolder "$(Build.ArtifactStagingDirectory)"'
+  
+            - task: PublishBuildArtifacts@1
+              displayName: "Publish Code coverage"
+              inputs:
+                PathtoPublish: "$(Build.ArtifactStagingDirectory)/codecoveragereport"
+                ArtifactName: codecoveragereport
+
+      - job: BuildAndPublishAPI
+        ${{ if parameters.HasUnitTests }}:
+          dependsOn:
+            - UnitTestsAndCodeCoverage
+        workspace:
+          clean: all
+        displayName: "Build and Publish $(ServiceName)"
+        steps:
+          - checkout: GatedInfrastructureDeploy
+            persistCredentials: true
+            path: $(CheckOutPath)
+            
+          - task: PowerShell@2
+            displayName: "Set assembly version numbers based on build ID"
+            inputs:
+              targetType: filePath
+              filePath: "$(Build.SourcesDirectory)/$(CheckOutPath)/Apply-AssemblyVersionAndDefaults.ps1"
+              arguments: >
+                -buildNumber "$(Build.BuildNumber)" 
+                -solutionDirectory "$(Build.SourcesDirectory)"
+                -UKHOAssemblyCompany "$(Company)" 
+                -UKHOAssemblyCopyright "$(Copyright)"
+                -UKHOAssemblyVersionPrefix "$(VersionPrefix)" 
+                -UKHOAssemblyProduct "${{ parameters.ServiceName }}"
+
+          - task: UseDotNet@2
+            displayName: "Use .NET $(DotnetVersion) sdk"
+            inputs:
+              packageType: sdk
+              version: $(DotnetVersion)
+              installationPath: $(Agent.ToolsDirectory)/dotnet
+
+          - task: DotNetCoreCLI@2
+            displayName: "Restore Nuget packages"
+            inputs:
+              command: "restore"
+              arguments: "--configuration release"
+              projects: $(Build.SourcesDirectory)${{ parameters.CsprojPaths }}
+              feedsToUse: "config"
+              nugetConfigPath: "$(Build.SourcesDirectory)/BuildNuget.config"
+
+          - task: DotNetCoreCLI@2
+            displayName: Build $(ServiceName)
+            inputs:
+              command: publish
+              arguments: "--configuration release --output $(System.DefaultWorkingDirectory)/BuiltWebService"
+              projects: ${{ parameters.CsprojPaths }}
+              publishWebProjects: false
+              modifyOutputPath: true
+              zipAfterPublish: true
+
+          - task: PublishPipelineArtifact@1
+            displayName: Publish $(ServiceName) Artifact
+            inputs:
+              targetPath: "$(System.DefaultWorkingDirectory)/BuiltWebService"
+              artifact: "BuiltWebService"
+              publishLocation: "pipeline"
+
+      - job: PublishPowerShellArtifact # Checking out repository in deploy stages is slow
+        workspace:
+          clean: all
+        displayName: "Publish Powershell Artifact"
+        steps:
+          - task: PublishPipelineArtifact@1
+            displayName: "Publish Powershell Artifact"
+            inputs:
+              targetPath: "$(Pipeline.Workspace)/$(CheckOutPath)/pwsh"
+              artifact: "PowershellArtifact"
+              publishLocation: "pipeline"

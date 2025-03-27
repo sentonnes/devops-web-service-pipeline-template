@@ -1,0 +1,68 @@
+﻿parameters:
+  - name: DeployStageVariableMappings
+    type: object
+    default: {}
+  - name: Environment
+    type: string
+    default: "dev"
+  - name: condition
+    type: string
+    default: "succeeded()"
+  - name: dependsOn
+    type: object
+    default: {}
+  - name: deployToSlotOrASE
+    type: boolean
+    default: false
+  - name: slotName
+    type: string
+    default: "production"
+
+stages:
+  - stage: Deploy_${{ parameters.Environment }}
+    displayName: "Deploy ${{ parameters.Environment }}"
+    condition: ${{ parameters.condition }}
+    dependsOn:
+      - ${{ each dependsOnThis in parameters.dependsOn }}:
+          - ${{ dependsOnThis }}
+    variables:
+      - ${{ each DeployStageVariableMapping in parameters.DeployStageVariableMappings }}:
+          - name: ${{ DeployStageVariableMapping.Key }}
+            value: ${{ replace(DeployStageVariableMapping.Value, "[ENV]", parameter.Environment }}
+
+    jobs:
+      - deployment: deployApp
+        displayName: "Deploy to ${{ parameters.Environment }}"
+        environment: "$(AzDOEnvironment)"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: "BuiltWebService"
+                  displayName: "Download BuiltWebService artifact"
+
+                - download: current
+                  artifact: "PowershellArtifact"
+                  displayName: "Download PowerShell artifact"
+
+                - task: AzureRmWebAppDeployment@4
+                  displayName: "Deploy" 
+                  inputs:
+                    azureSubscription: ${{ variables.azureSubscriptionServiceConnection }}
+                    WebAppName: $(WebAppResourceName)
+                    deployToSlotOrASE: ${{ parameters.deployToSlotOrASE }}
+                    resourceGroupName: $(WebAppResourceGroupName) # string. Required when deployToSlotOrASE = true. Resource group.
+                    SlotName: ${{ parameters.slotName }} # string. Required when deployToSlotOrASE = true. Slot. Default: production.
+                    packageForLinux: "$(Pipeline.Workspace)/**/BuiltWebService.zip" # string. Required. Package or folder. Default: $(System.DefaultWorkingDirectory)/**/*.zip.
+                    enableCustomDeployment: true
+                    DeploymentType: "zipDeploy"
+                    TakeAppOfflineFlag: false
+                    JSONFiles: "**/appsettings.json"
+
+                - task: PowerShell@2
+                  displayName: "Check the status of Service"
+                  inputs:
+                    targetType: filePath
+                    filePath: "$(Pipeline.Workspace)/PowershellArtifact/CheckServiceStatus.ps1"
+                    arguments: "-healthEndPointUrl $(HealthCheckUrl) -waitTimeInMinute 5"

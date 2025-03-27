@@ -1,0 +1,25 @@
+# DO NOT RUN
+# FOR COMPILE TESTING ONLY
+
+resources:
+  repositories:
+    - repository: WebServicePipeline
+      type: github
+      endpoint: sentonnes
+      name: sentonnes/devops-web-service-pipeline-template
+#      ref: refs/tags/1.0.0 # No 1.0.0 yet, default to main
+
+extends:
+  template: pipeline.yml@WebServicePipeline
+  parameters:
+    BuildStageVariableMappings:
+      ServiceName: Test
+      CsprojPaths: "/file/file.csproj"
+      ProjectFolderPath: "Project.API"
+    HasUnitTests: false
+    DeployStageVariableMappings:
+      AzDOEnvironment: hackathon-[ENV]
+      azureSubscriptionServiceConnection: hackathon-thing
+      WebAppResourceName: hackathon-[ENV]-webapp
+      WebAppResourceGroupName: hackathon-[ENV]-rg
+      HealthCheckUrl: "https://hackathon-[ENV]-webapp.azurewebsites.net/health"
