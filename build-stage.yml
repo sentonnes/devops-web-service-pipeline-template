@@ -75,7 +75,7 @@ stages:
           clean: all
         displayName: "Build and Publish $(ServiceName)"
         steps:
-          - checkout: GatedInfrastructureDeploy
+          - checkout: WebServicePipeline
             persistCredentials: true
             path: $(CheckOutPath)
             
