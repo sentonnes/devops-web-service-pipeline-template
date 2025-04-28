@@ -30,7 +30,7 @@ stages:
       BuildStageVariableMappings: ${{ parameters.BuildStageVariableMappings }}
       HasUnitTests: ${{ parameters.HasUnitTests }}
       
-  - template: checks-stage.yml
+  # - template: checks-stage.yml will need rewriting for using an linux container
 
   - template: deploy-stage.yml
     parameters:
