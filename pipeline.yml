@@ -44,7 +44,7 @@ stages:
       Environment: qa
       DeployStageVariableMappings: ${{ parameters.DeployStageVariableMappings }}
       dependsOn:
-        - "Checks"
+        #- "Checks"
         - "Deploy_dev"
       condition: succeeded('Checks', 'Deploy_dev')
 
