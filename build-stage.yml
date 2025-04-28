@@ -136,6 +136,6 @@ stages:
           - task: PublishPipelineArtifact@1
             displayName: "Publish Powershell Artifact"
             inputs:
-              targetPath: "$(Pipeline.Workspace)/$(TemplateRepoCheckOutPathSegment)/pwsh"
+              targetPath: "$(Agent.BuildDirectory)/$(TemplateRepoCheckOutPathSegment)/pwsh"
               artifact: "PowershellArtifact"
               publishLocation: "pipeline"
