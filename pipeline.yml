@@ -2,8 +2,7 @@ parameters:
   - name: PipelineVariableMappings
     type: object
     default:
-      UbuntuPool: "Mare Nectaris"
-      WindowsPool: "Mare Nubium"
+      UbuntuPool: "ubuntu-pool"
       DotnetVersion: "8.0.x" 
   - name: BuildStageVariableMappings
     type: object
