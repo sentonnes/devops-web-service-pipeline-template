@@ -86,7 +86,7 @@ stages:
             displayName: "Set assembly version numbers based on build ID"
             inputs:
               targetType: filePath
-              filePath: "$(Agent.BuildDirectory)/$(CheckOutPath)/Apply-AssemblyVersionAndDefaults.ps1"
+              filePath: "$(Agent.BuildDirectory)/$(TemplateRepoCheckOutPathSegment)/pwsh/Apply-AssemblyVersionAndDefaults.ps1"
               arguments: >
                 -buildNumber "$(Build.BuildNumber)" 
                 -solutionDirectory "$(Build.SourcesDirectory)"
@@ -136,6 +136,6 @@ stages:
           - task: PublishPipelineArtifact@1
             displayName: "Publish Powershell Artifact"
             inputs:
-              targetPath: "$(Pipeline.Workspace)/$(CheckOutPath)/pwsh"
+              targetPath: "$(Pipeline.Workspace)/$(TemplateRepoCheckOutPathSegment)/pwsh"
               artifact: "PowershellArtifact"
               publishLocation: "pipeline"
