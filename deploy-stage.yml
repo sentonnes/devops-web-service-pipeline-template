@@ -1,7 +1,7 @@
 ﻿parameters:
   - name: DeployStageVariableMappings
     type: object
-    default: { }
+    default: {}
   - name: Environment
     type: string
     default: "dev"
@@ -10,7 +10,7 @@
     default: "succeeded()"
   - name: dependsOn
     type: object
-    default: { }
+    default: {}
    
 stages:
   - stage: Deploy_${{ parameters.Environment }}

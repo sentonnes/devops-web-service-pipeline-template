@@ -4,7 +4,7 @@
     default: false
   - name: BuildStageVariableMappings
     type: object
-    default: { }
+    default: {}
 
 stages:
   - stage: Build
