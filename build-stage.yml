@@ -133,6 +133,10 @@ stages:
           clean: all
         displayName: "Publish Powershell Artifact"
         steps:
+          - checkout: WebServicePipeline
+            persistCredentials: true
+            path: $(TemplateRepoCheckOutPathSegment)
+            
           - task: PublishPipelineArtifact@1
             displayName: "Publish Powershell Artifact"
             inputs:
