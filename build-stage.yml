@@ -4,7 +4,7 @@
     default: false
   - name: BuildStageVariableMappings
     type: object
-    default: {}
+    default: { }
 
 stages:
   - stage: Build
@@ -22,50 +22,50 @@ stages:
 
     jobs:
       - ${{ if parameters.HasUnitTests }}:
-        - job: UnitTestsAndCodeCoverage
-          workspace:
-            clean: all
-          displayName: "Dotnet Test and Publish Code Coverage"
-          steps:
-            - task: UseDotNet@2
-              displayName: 'Use .NET $(DotnetVersion) sdk'
-              inputs:
-                packageType: sdk
-                useGlobalJson: true
-                workingDirectory: '$(Build.SourcesDirectory)\$(ProjectFolderPath)'
-  
-            - task: DotNetCoreCLI@2
-              displayName: ".Net Core - NuGet restore test projects only"
-              inputs:
-                command: "restore"
-                projects: "**/*UnitTests.csproj"
-                feedsToUse: config
-                noCache: true
-                nugetConfigPath: '$(Build.SourcesDirectory)\BuildNuget.config'
-                workingDirectory: '$(Build.SourcesDirectory)\$(ProjectFolderPath)'
-                packagesDirectory: '$(Build.SourcesDirectory)\$(ProjectFolderPath)\packagesForTests'
-  
-            - task: DotNetCoreCLI@2
-              displayName: "dotnet test - Perform Unit Tests"
-              inputs:
-                command: "test"
-                projects: "**/*UnitTests.csproj"
-                arguments: '--configuration release --settings "$(Build.SourcesDirectory)\test.runsettings" /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura'
-                publishTestResults: true
-                testRunTitle: "UnitTests"
-  
-            - task: PowerShell@2
-              displayName: "Generate code coverage report"
-              inputs:
-                targetType: filePath
-                filePath: '$(Build.SourcesDirectory)\CodeCoverageReport.ps1'
-                arguments: '-source "$(Build.SourcesDirectory)" -reportFolder "$(Build.ArtifactStagingDirectory)"'
-  
-            - task: PublishBuildArtifacts@1
-              displayName: "Publish Code coverage"
-              inputs:
-                PathtoPublish: "$(Build.ArtifactStagingDirectory)/codecoveragereport"
-                ArtifactName: codecoveragereport
+          - job: UnitTestsAndCodeCoverage
+            workspace:
+              clean: all
+            displayName: "Dotnet Test and Publish Code Coverage"
+            steps:
+              - task: UseDotNet@2
+                displayName: 'Use .NET $(DotnetVersion) sdk'
+                inputs:
+                  packageType: sdk
+                  useGlobalJson: true
+                  workingDirectory: '$(Build.SourcesDirectory)\$(ProjectFolderPath)'
+
+              - task: DotNetCoreCLI@2
+                displayName: ".Net Core - NuGet restore test projects only"
+                inputs:
+                  command: "restore"
+                  projects: "**/*UnitTests.csproj"
+                  feedsToUse: config
+                  noCache: true
+                  nugetConfigPath: '$(Build.SourcesDirectory)\BuildNuget.config'
+                  workingDirectory: '$(Build.SourcesDirectory)\$(ProjectFolderPath)'
+                  packagesDirectory: '$(Build.SourcesDirectory)\$(ProjectFolderPath)\packagesForTests'
+
+              - task: DotNetCoreCLI@2
+                displayName: "dotnet test - Perform Unit Tests"
+                inputs:
+                  command: "test"
+                  projects: "**/*UnitTests.csproj"
+                  arguments: '--configuration release --settings "$(Build.SourcesDirectory)\test.runsettings" /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura'
+                  publishTestResults: true
+                  testRunTitle: "UnitTests"
+
+              - task: PowerShell@2
+                displayName: "Generate code coverage report"
+                inputs:
+                  targetType: filePath
+                  filePath: '$(Build.SourcesDirectory)\CodeCoverageReport.ps1'
+                  arguments: '-source "$(Build.SourcesDirectory)" -reportFolder "$(Build.ArtifactStagingDirectory)"'
+
+              - task: PublishBuildArtifacts@1
+                displayName: "Publish Code coverage"
+                inputs:
+                  PathtoPublish: "$(Build.ArtifactStagingDirectory)/codecoveragereport"
+                  ArtifactName: codecoveragereport
 
       - job: BuildAndPublishAPI
         ${{ if parameters.HasUnitTests }}:
@@ -77,13 +77,16 @@ stages:
         steps:
           - checkout: WebServicePipeline
             persistCredentials: true
-            path: $(CheckOutPath)
-            
+            path: $(TemplateRepoCheckOutPathSegment)
+
+          - checkout: self
+            path: $(ServiceRepoCheckoutPathSegment)
+
           - task: PowerShell@2
             displayName: "Set assembly version numbers based on build ID"
             inputs:
               targetType: filePath
-              filePath: "$(Build.SourcesDirectory)/$(CheckOutPath)/Apply-AssemblyVersionAndDefaults.ps1"
+              filePath: "$(Agent.BuildDirectory)/$(CheckOutPath)/Apply-AssemblyVersionAndDefaults.ps1"
               arguments: >
                 -buildNumber "$(Build.BuildNumber)" 
                 -solutionDirectory "$(Build.SourcesDirectory)"

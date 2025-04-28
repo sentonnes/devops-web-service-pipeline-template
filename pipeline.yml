@@ -17,8 +17,10 @@ parameters:
 variables:
   - name: BuildCounter
     value: $[counter(format('{0:yyyyMMdd}', pipeline.startTime), 1)]
-  - name: CheckOutPath
+  - name: TemplateRepoCheckOutPathSegment
     value: devops-web-service-pipeline-template
+  - name: ServiceRepoCheckoutPathSegment
+    value: WebAppFiles
   - ${{ each PipelineVariableMapping in parameters.PipelineVariableMappings }}:
     - name: ${{ PipelineVariableMapping.Key }}
       value: ${{ PipelineVariableMapping.Value }}
