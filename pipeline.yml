@@ -13,6 +13,11 @@ parameters:
   - name: HasUnitTests
     type: boolean
     default: false
+    
+resources:
+  containers:
+    - container: PowerShellContainer
+      image: ukhydrographicoffice/terraform-powershell:latest
 
 variables:
   - name: BuildCounter

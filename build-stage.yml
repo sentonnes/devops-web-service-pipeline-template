@@ -68,6 +68,7 @@ stages:
                   ArtifactName: codecoveragereport
 
       - job: BuildAndPublishAPI
+        container: PowerShellContainer
         ${{ if parameters.HasUnitTests }}:
           dependsOn:
             - UnitTestsAndCodeCoverage
