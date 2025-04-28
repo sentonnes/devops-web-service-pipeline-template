@@ -1,7 +1,7 @@
 ﻿parameters:
   - name: DeployStageVariableMappings
     type: object
-    default: {}
+    default: { }
   - name: Environment
     type: string
     default: "dev"
@@ -10,14 +10,8 @@
     default: "succeeded()"
   - name: dependsOn
     type: object
-    default: {}
-  - name: deployToSlotOrASE
-    type: boolean
-    default: false
-  - name: slotName
-    type: string
-    default: "production"
-
+    default: { }
+   
 stages:
   - stage: Deploy_${{ parameters.Environment }}
     displayName: "Deploy ${{ parameters.Environment }}"
@@ -47,14 +41,14 @@ stages:
                   displayName: "Download PowerShell artifact"
 
                 - task: AzureRmWebAppDeployment@4
-                  displayName: "Deploy" 
+                  displayName: "Deploy"
                   inputs:
                     azureSubscription: ${{ variables.azureSubscriptionServiceConnection }}
                     WebAppName: $(WebAppResourceName)
-                    deployToSlotOrASE: ${{ parameters.deployToSlotOrASE }}
-                    resourceGroupName: $(WebAppResourceGroupName) # string. Required when deployToSlotOrASE = true. Resource group.
-                    SlotName: ${{ parameters.slotName }} # string. Required when deployToSlotOrASE = true. Slot. Default: production.
-                    packageForLinux: "$(Pipeline.Workspace)/**/BuiltWebService.zip" # string. Required. Package or folder. Default: $(System.DefaultWorkingDirectory)/**/*.zip.
+                    deployToSlotOrASE: true
+                    resourceGroupName: $(WebAppResourceGroupName)
+                    SlotName: "staging"
+                    packageForLinux: "$(Pipeline.Workspace)/**/BuiltWebService.zip"
                     enableCustomDeployment: true
                     DeploymentType: "zipDeploy"
                     TakeAppOfflineFlag: false
