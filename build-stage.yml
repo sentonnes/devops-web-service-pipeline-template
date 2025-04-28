@@ -90,7 +90,7 @@ stages:
               filePath: "$(Agent.BuildDirectory)/$(TemplateRepoCheckOutPathSegment)/pwsh/Apply-AssemblyVersionAndDefaults.ps1"
               arguments: >
                 -buildNumber "$(Build.BuildNumber)" 
-                -solutionDirectory "$(Build.SourcesDirectory)"
+                -solutionDirectory "$(Agent.BuildDirectory)/$(ServiceRepoCheckoutPathSegment)"
                 -UKHOAssemblyCompany "$(Company)" 
                 -UKHOAssemblyCopyright "$(Copyright)"
                 -UKHOAssemblyVersionPrefix "$(VersionPrefix)" 
@@ -108,9 +108,9 @@ stages:
             inputs:
               command: "restore"
               arguments: "--configuration release"
-              projects: $(Build.SourcesDirectory)$(CsprojPaths)
+              projects: $(Agent.BuildDirectory)/$(ServiceRepoCheckoutPathSegment)$(CsprojPaths)
               feedsToUse: "config"
-              nugetConfigPath: "$(Build.SourcesDirectory)/BuildNuget.config"
+              nugetConfigPath: "$(Agent.BuildDirectory)/$(ServiceRepoCheckoutPathSegment)/BuildNuget.config"
 
           - task: DotNetCoreCLI@2
             displayName: Build $(ServiceName)
