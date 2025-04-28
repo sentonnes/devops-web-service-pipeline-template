@@ -25,6 +25,8 @@ variables:
     - name: ${{ PipelineVariableMapping.Key }}
       value: ${{ PipelineVariableMapping.Value }}
 
+pool: $(UbuntuPool)
+
 stages:
   - template: build-stage.yml
     parameters:
